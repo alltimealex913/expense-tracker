@@ -1,0 +1,74 @@
+:root {
+    --primary: #2c3e50;
+    --accent: #27ae60;
+    --bg: #f4f7f6;
+    --danger: #e74c3c;
+}
+
+body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; }
+
+/* Loader */
+#loading-screen {
+    height: 100vh; width: 100%; position: fixed; background: var(--primary);
+    color: white; display: flex; justify-content: center; align-items: center; z-index: 9999;
+}
+.spinner {
+    border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white;
+    border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 10px auto;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* Header */
+header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+.logo { font-weight: bold; font-size: 1.2em; }
+
+/* Layout - Desktop Default */
+.main-layout { 
+    display: grid; 
+    grid-template-columns: 350px 1fr; 
+    gap: 20px; 
+    padding: 20px; 
+}
+
+/* RESPONSIVE BREAKPOINT (Tablets and Phones) */
+@media (max-width: 768px) {
+    .main-layout {
+        grid-template-columns: 1fr; /* Isang column na lang */
+    }
+    .sidebar {
+        order: 2; /* Summary sa ilalim ng calendar sa mobile */
+    }
+    .calendar-section {
+        order: 1; /* Calendar muna ang makikita */
+        min-height: 500px !important;
+    }
+    .modal-content {
+        width: 90% !important; /* Mas malapad ang modal sa maliit na screen */
+    }
+}
+
+.card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 10px; }
+
+/* Chart and Summary */
+.chart-container { height: 250px; position: relative; }
+.summary-header { display: flex; justify-content: space-between; align-items: center; }
+.view-toggle { display: flex; gap: 5px; background: #eee; padding: 3px; border-radius: 8px; }
+.view-toggle button { border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75em; font-weight: bold; }
+.view-toggle button.active { background: var(--primary); color: white; }
+#ranking-list { list-style: none; padding: 0; margin-top: 15px; }
+#ranking-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+
+/* Calendar Style */
+.calendar-section { width: 100%; min-height: 700px; display: flex; flex-direction: column; overflow: hidden; }
+#calendar { flex-grow: 1; background: white; padding: 10px; border-radius: 8px; }
+.fc-daygrid-day-number { font-weight: 800 !important; color: #000 !important; padding: 5px !important; }
+.fc-event-main { font-weight: 900 !important; color: #000 !important; }
+
+/* Modal & Auth */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); overflow-y: auto; }
+.modal-content { margin: 50px auto; width: 400px; position: relative; }
+.close-modal { position: absolute; right: 20px; top: 10px; font-size: 24px; cursor: pointer; }
+.input-group input, .input-group select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+#main-btn, .btn-save { background: var(--accent); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; }
+#toggle-text { color:blue; cursor:pointer; margin-top:15px; font-size: 0.9em; text-align: center; display: block; }
+.auth-box { background: white; padding: 40px; border-radius: 15px; width: 320px; margin: auto; }

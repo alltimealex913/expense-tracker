@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <div class="loader-content">
+            <h2>Loading Session...</h2>
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <div id="auth-container" style="display: none;">
+        <div class="auth-box">
+            <h2 id="auth-title">Login</h2>
+            <div class="input-group">
+                <input type="email" id="email" placeholder="Email Address">
+                <input type="password" id="password" placeholder="Password">
+            </div>
+            <button onclick="handleAuth()" id="main-btn">Login</button>
+            <p onclick="toggleAuth()" id="toggle-text">No account? Register here.</p>
+        </div>
+    </div>
+
+    <div id="dashboard-container" style="display: none;">
+        <header>
+            <div class="logo">Expenses Tracker</div>
+            <div class="user-info">
+                <span id="user-display"></span>
+                <button onclick="logout()" class="logout-btn">Logout</button>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <aside class="sidebar">
+                <div class="card chart-card">
+                    <h3>Category Share</h3>
+                    <div class="chart-container">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card summary-card">
+                    <div class="summary-header">
+                        <h3 id="summary-title">Summary</h3>
+                        <div class="view-toggle">
+                            <button onclick="changeView('month')" id="btn-month" class="active">Month</button>
+                            <button onclick="changeView('year')" id="btn-year">Year</button>
+                        </div>
+                    </div>
+                    <h2 id="total-display">Total: ₱0.00</h2>
+                    <ul id="ranking-list"></ul>
+                </div>
+            </aside>
+
+            <main class="calendar-section card">
+                <div id="calendar"></div>
+            </main>
+        </div>
+    </div>
+
+    <div id="expenseModal" class="modal">
+        <div class="modal-content card">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h3 id="modal-title">Expense Details</h3>
+            <p id="modal-date" style="color:gray; font-size:0.9em; margin-bottom:15px;"></p>
+            
+            <div class="input-group">
+                <input type="number" id="modal-amount" placeholder="Amount (₱)">
+                <select id="modal-category">
+                    <option value="Food">Food</option>
+                    <option value="Transportation">Transportation</option>
+                    <option value="Grocery">Grocery</option>
+                    <option value="Shopping">Shopping</option>
+                    <option value="Load">Load</option>
+                    <option value="Laundry">Laundry</option>
+                    <option value="Rent">Rent</option>
+                    <option value="Bills">Bills</option>
+                    <option value="Medicine">Medicine</option>
+                    <option value="Others">Others</option>
+                </select>
+            </div>
+            <div id="modal-action-buttons"></div>
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+            <h4 style="text-align:left;">History</h4>
+            <ul id="modal-day-expenses"></ul>
+        </div>
+    </div>
+
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+    <script src="script.js"></script>
+</body>
+</html>
