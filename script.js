@@ -23,19 +23,22 @@ let selectedEditId = null;
 let currentView = 'month';
 let allExpenses = [];
 
+// --- UPDATED SESSION MONITOR ---
 auth.onAuthStateChanged(user => {
     const loader = document.getElementById('loading-screen');
     const authBox = document.getElementById('auth-container');
     const dashBox = document.getElementById('dashboard-container');
 
-    if (user) {
+    // Dito natin chicheck kung verified ang email bago ipakita ang dashboard
+    if (user && user.emailVerified) {
         currentUid = user.uid;
-        document.getElementById('user-display').innerText = user.email.split('@')[0];
+        document.getElementById('user-display').innerText = user.email;
         loader.style.display = 'none';
         authBox.style.display = 'none';
         dashBox.style.display = 'block';
         setTimeout(() => { initDashboard(user.uid); }, 150);
     } else {
+        // Kung walang user O hindi pa verified, balik sa login screen
         loader.style.display = 'none';
         authBox.style.display = 'flex';
         dashBox.style.display = 'none';
@@ -234,11 +237,38 @@ function toggleAuth() {
 async function handleAuth() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    
+    if (!email || !password) return alert("Please fill in all fields.");
+
     try {
-        if (isLoginView) await auth.signInWithEmailAndPassword(email, password);
-        else await auth.createUserWithEmailAndPassword(email, password);
-    } catch (e) { alert(e.message); }
+        if (isLoginView) {
+            const userCredential = await auth.signInWithEmailAndPassword(email, password);
+            if (!userCredential.user.emailVerified) {
+                alert("Account not yet verified. Check your email.");
+                await auth.signOut();
+                return;
+            }
+        } else {
+            // REGISTER
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            
+            // 1. I-send ang verification email
+            await userCredential.user.sendEmailVerification();
+            
+            // 2. IMPORTANTE: I-sign out agad para hindi bumukas ang dashboard
+            await auth.signOut();
+            
+            // 3. I-notify ang user at ibalik sa Login View
+            alert("Registration successful! Please check your email and click the verification link before logging in.");
+            
+            isLoginView = true;
+            toggleAuth(); // Siguraduhin na babalik sa login screen
+        }
+    } catch (e) { 
+        alert("Error: " + e.message); 
+    }
 }
+
 function logout() { auth.signOut(); }
 
 function updateTrendChart() {
@@ -290,4 +320,21 @@ function updateTrendChart() {
             }
         }
     });
+}
+
+// FORGOT PASSWORD FUNCTION
+async function forgotPassword() {
+    const email = document.getElementById('email').value;
+    
+    if (!email) {
+        alert("Please enter your email address first in the input field above.");
+        return;
+    }
+    
+    try {
+        await auth.sendPasswordResetEmail(email);
+        alert("Password reset link sent! Please check your inbox or spam folder.");
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
 }
