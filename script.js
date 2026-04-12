@@ -16,6 +16,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 let globalCalendar = null;
 let expenseChart = null;
+let trendChart = null;
 let currentUid = null;
 let isLoginView = true;
 let selectedEditId = null;
@@ -54,7 +55,12 @@ function initDashboard(uid) {
             center: 'title', 
             right: '' 
         },
-        datesSet: function() { refreshSummary(); },
+        datesSet: function() { 
+    refreshSummary(); 
+    if (typeof updateTrendChart === "function") {
+        updateTrendChart(); // Dito natin pinipilit ang graph na mag-refresh tuwing lilipat ng view
+    }
+},
         dateClick: (info) => {
             if (info.dateStr > new Date().toISOString().split('T')[0]) return alert("You can only add new expenses up to the present date.");
             openModalForAdd(info.dateStr);
@@ -89,6 +95,7 @@ function initDashboard(uid) {
             globalCalendar.addEventSource(newEvents);
         }
         refreshSummary();
+        updateTrendChart();
     });
 }
 
@@ -137,13 +144,41 @@ function updateSidebarUI(catTotals) {
 
     const ctx = document.getElementById('expenseChart').getContext('2d');
     if(expenseChart) expenseChart.destroy();
+    
     expenseChart = new Chart(ctx, {
         type: 'pie',
         data: {
             labels: labels,
-            datasets: [{ data: values, backgroundColor: ['#27ae60','#3498db','#e67e22','#e74c3c','#9b59b6','#f1c40f','#1abc9c','#34495e','#7f8c8d','#d35400'] }]
+            datasets: [{ 
+                data: values, 
+                backgroundColor: ['#27ae60','#3498db','#e67e22','#e74c3c','#9b59b6','#f1c40f','#1abc9c','#34495e','#7f8c8d','#d35400'] 
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom' } } }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 12, font: { size: 11 } }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            // Kunin ang total ng lahat ng data points
+                            const dataset = context.dataset.data;
+                            const total = dataset.reduce((acc, current) => acc + current, 0);
+                            const value = context.raw;
+                            
+                            // Calculate Percentage
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            
+                            return ` ${context.label}: ₱${value.toLocaleString()} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
     });
 }
 
@@ -205,3 +240,54 @@ async function handleAuth() {
     } catch (e) { alert(e.message); }
 }
 function logout() { auth.signOut(); }
+
+function updateTrendChart() {
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    
+    // Kunin ang active year mula sa calendar view
+    if (!globalCalendar) return;
+    const activeYear = globalCalendar.getDate().getFullYear();
+    
+    // I-reset ang array sa 12 months na puro 0
+    let monthlyData = new Array(12).fill(0);
+
+    // Filter: Isasama lang ang expenses kung ang taon nito ay kapareho ng activeYear sa calendar
+    allExpenses.forEach(exp => {
+        const d = new Date(exp.date);
+        if (d.getFullYear() === activeYear) {
+            monthlyData[d.getMonth()] += exp.amount;
+        }
+    });
+
+    if (trendChart) trendChart.destroy();
+    
+    trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [{
+                label: `Total Spending for ${activeYear}`,
+                data: monthlyData,
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                borderWidth: 3,
+                tension: 0.3,
+                fill: true,
+                pointBackgroundColor: '#2c3e50',
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) { return '₱' + value.toLocaleString(); }
+                    }
+                }
+            }
+        }
+    });
+}
