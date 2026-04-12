@@ -64,10 +64,20 @@ function initDashboard(uid) {
         updateTrendChart(); // Dito natin pinipilit ang graph na mag-refresh tuwing lilipat ng view
     }
 },
-        dateClick: (info) => {
-            if (info.dateStr > new Date().toISOString().split('T')[0]) return alert("You can only add new expenses up to the present date.");
-            openModalForAdd(info.dateStr);
-        },
+       dateClick: (info) => {
+    // Kuhanin ang petsa ngayon sa format na YYYY-MM-DD base sa local time ng user
+    const now = new Date();
+    const todayLocal = now.getFullYear() + '-' + 
+                       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                       String(now.getDate()).padStart(2, '0');
+
+    // I-compare ang click date vs local today
+    if (info.dateStr > todayLocal) {
+        return alert("You can only add new expenses up to the present date.");
+    }
+    
+    openModalForAdd(info.dateStr);
+},
         windowResize: function(view) {
             // Automatic update ng calendar size kapag nag-rotate ang screen
             globalCalendar.updateSize();
