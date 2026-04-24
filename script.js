@@ -266,7 +266,7 @@ function resetCategoryToExpenses() {
         <option value="Grocery">Grocery</option><option value="Shopping">Shopping</option>
         <option value="Load">Load</option><option value="Laundry">Laundry</option>
         <option value="Rent">Rent</option><option value="Bills">Bills</option>
-        <option value="Medicine">Medicine</option><option value="Others">Others</option>`;
+        <option value="Medicine">Medicine</option><option value="Savings">Savings</option><option value="Others">Others</option>`;
 }
 
 function openInflowModal() {
