@@ -54,25 +54,44 @@
 
         <div class="main-layout">
             <aside class="sidebar">
-                <div class="card chart-card">
-                    <h3>Category Share</h3>
-                    <div class="chart-container">
-                        <canvas id="expenseChart"></canvas>
-                    </div>
-                </div>
+    <div class="card chart-card">
+        <h3>Category Share</h3>
+        <div class="chart-container">
+            <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
 
-                <div class="card summary-card">
-                    <div class="summary-header">
-                        <h3 id="summary-title">Summary</h3>
-                        <div class="view-toggle">
-                            <button onclick="changeView('month')" id="btn-month" class="active">Month</button>
-                            <button onclick="changeView('year')" id="btn-year">Year</button>
-                        </div>
-                    </div>
-                    <h2 id="total-display">Total: ₱0.00</h2>
-                    <ul id="ranking-list"></ul>
-                </div>
-            </aside>
+    <div class="card summary-card">
+    <div class="summary-header">
+        <h3 id="summary-title">Summary</h3>
+        <div class="view-toggle">
+            <button onclick="changeView('month')" id="btn-month" class="active">Month</button>
+            <button onclick="changeView('year')" id="btn-year">Year</button>
+        </div>
+    </div>
+    
+    <div style="margin: 15px 0;">
+        <div style="display:flex; justify-content:space-between;">
+            <span>Inflow:</span> <span id="inflow-display" style="color:#27ae60; font-weight:bold;">₱0</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+            <span>Outflow:</span> <span id="outflow-display" style="color:#e74c3c; font-weight:bold;">₱0</span>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+        <div style="display:flex; justify-content:space-between; font-size: 1.1em;">
+            <strong>Savings:</strong> <strong id="savings-display" style="color:#2c3e50;">₱0</strong>
+        </div>
+
+        <div id="method-totals-list" style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; font-size: 0.85em;">
+            </div>
+    </div>
+
+    <button onclick="openInflowModal()" style="background:#27ae60; color:white; border:none; padding:10px; width:100%; border-radius:8px; cursor:pointer; font-weight:bold; margin-bottom:15px;">+ Add Inflow</button>
+    
+    <h4 style="margin-bottom: 5px;">Category</h4>
+    <ul id="ranking-list"></ul>
+</div>
+</aside>
 
             <main class="calendar-section">
     <div class="card calendar-card">
@@ -107,7 +126,17 @@
                     <option value="Rent">Rent</option>
                     <option value="Bills">Bills</option>
                     <option value="Medicine">Medicine</option>
+                    <option value="Savings">Savings</option>
                     <option value="Others">Others</option>
+                </select>
+                <select id="modal-payment">
+                 <option value="Cash">Cash</option>
+                <option value="GCash">GCash</option>
+                 <option value="Maya">Maya</option>
+                 <option value="Debit Card">Debit Card</option>
+                     <option value="Credit Card">Credit Card</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Others">Others</option>
                 </select>
             </div>
             <div id="modal-action-buttons"></div>

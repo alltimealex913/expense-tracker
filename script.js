@@ -88,28 +88,32 @@ function initDashboard(uid) {
 
     db.collection("expenses").where("uid", "==", uid)
     .onSnapshot(snapshot => {
-        allExpenses = [];
-        let dailyTotals = {};
-        snapshot.forEach(doc => {
-            const d = { id: doc.id, ...doc.data() };
-            allExpenses.push(d);
-            dailyTotals[d.date] = (dailyTotals[d.date] || 0) + d.amount;
-        });
+    allExpenses = [];
+    let dailyOutflowTotals = {};
+    snapshot.forEach(doc => {
+        const d = { id: doc.id, ...doc.data() };
+        allExpenses.push(d);
 
-        let newEvents = Object.entries(dailyTotals).map(item => ({
-            title: `₱${item[1].toLocaleString()}`,
-            start: item[0],
-            display: 'block',
-            allDay: true
-        }));
-
-        if(globalCalendar) {
-            globalCalendar.removeAllEventSources();
-            globalCalendar.addEventSource(newEvents);
+        // Outflow lang ang ipakita sa Calendar box
+        if (d.type === "outflow" || !d.type) { // !d.type handles your old data
+            dailyOutflowTotals[d.date] = (dailyOutflowTotals[d.date] || 0) + d.amount;
         }
-        refreshSummary();
-        updateTrendChart();
     });
+
+    let newEvents = Object.entries(dailyOutflowTotals).map(item => ({
+        title: `₱${item[1].toLocaleString()}`,
+        start: item[0],
+        display: 'block',
+        allDay: true
+    }));
+
+    if(globalCalendar) {
+        globalCalendar.removeAllEventSources();
+        globalCalendar.addEventSource(newEvents);
+    }
+    refreshSummary();
+    updateTrendChart();
+});
 }
 
 function changeView(view) {
@@ -125,36 +129,77 @@ function refreshSummary() {
     const targetMonth = viewDate.getMonth();
     const targetYear = viewDate.getFullYear();
 
-    let filteredTotal = 0;
-    let catTotals = {};
+    let totalInflow = 0;
+    let totalOutflow = 0;
+    let catTotals = {}; 
+    let methodTotals = {}; // Dito natin i-stostore ang totals per payment method
 
     allExpenses.forEach(exp => {
         const d = new Date(exp.date);
         const isSameYear = d.getFullYear() === targetYear;
         const isSameMonth = d.getMonth() === targetMonth;
         let include = (currentView === 'month') ? (isSameYear && isSameMonth) : (isSameYear);
+
         if (include) {
-            filteredTotal += exp.amount;
-            catTotals[exp.category] = (catTotals[exp.category] || 0) + exp.amount;
+            if (exp.type === "inflow") {
+                totalInflow += exp.amount;
+            } else {
+                totalOutflow += exp.amount;
+                catTotals[exp.category] = (catTotals[exp.category] || 0) + exp.amount;
+                
+                // --- PAYMENT METHOD LOGIC ---
+                const pMode = exp.paymentMode || "Cash"; // Default sa Cash kung walang entry
+                methodTotals[pMode] = (methodTotals[pMode] || 0) + exp.amount;
+            }
         }
     });
 
-    const monthName = viewDate.toLocaleString('default', { month: 'long' });
-    document.getElementById('summary-title').innerText = currentView === 'month' ? `${monthName} Summary` : `${targetYear} Summary`;
-    document.getElementById('total-display').innerText = "₱" + filteredTotal.toLocaleString();
+    // Update main displays
+    document.getElementById('inflow-display').innerText = "₱" + totalInflow.toLocaleString();
+    document.getElementById('outflow-display').innerText = "₱" + totalOutflow.toLocaleString();
+    document.getElementById('savings-display').innerText = "₱" + (totalInflow - totalOutflow).toLocaleString();
+    
+    // --- RENDER PAYMENT BREAKDOWN ---
+    const methodContainer = document.getElementById('method-totals-list');
+    methodContainer.innerHTML = "<p style='color:#7f8c8d; margin-bottom:5px; font-weight:bold;'>Paid using:</p>";
+    
+    // I-loop natin yung methodTotals para ipakita sa UI
+    Object.entries(methodTotals).forEach(([mode, amount]) => {
+        const div = document.createElement('div');
+        div.style.display = "flex";
+        div.style.justifyContent = "space-between";
+        div.style.marginBottom = "3px";
+        div.innerHTML = `<span>${mode}:</span> <b>₱${amount.toLocaleString()}</b>`;
+        methodContainer.appendChild(div);
+    });
+
     updateSidebarUI(catTotals);
 }
 
 function updateSidebarUI(catTotals) {
     const list = document.getElementById('ranking-list');
     list.innerHTML = "";
-    const sorted = Object.entries(catTotals).sort((a,b) => b[1] - a[1]);
+    
+    // 1. I-filter natin: Tanggalin ang mga categories na pang-Inflow
+    // (Salary, Allowance, Business, atbp.) para Expenses lang ang maiwan sa chart
+    const inflowCategories = ["Salary", "Allowance", "Business"];
+    
+    const filteredCatEntries = Object.entries(catTotals).filter(([category]) => {
+        return !inflowCategories.includes(category);
+    });
+
+    // 2. I-sort ang expenses mula pinakamalaki hanggang maliit
+    const sorted = filteredCatEntries.sort((a,b) => b[1] - a[1]);
+    
     let labels = [], values = [];
+    
     sorted.forEach(item => {
-        labels.push(item[0]); values.push(item[1]);
+        labels.push(item[0]); 
+        values.push(item[1]);
         list.innerHTML += `<li><span>${item[0]}</span><b>₱${item[1].toLocaleString()}</b></li>`;
     });
 
+    // 3. I-render ang Chart (Expenses Only)
     const ctx = document.getElementById('expenseChart').getContext('2d');
     if(expenseChart) expenseChart.destroy();
     
@@ -164,32 +209,14 @@ function updateSidebarUI(catTotals) {
             labels: labels,
             datasets: [{ 
                 data: values, 
-                backgroundColor: ['#27ae60','#3498db','#e67e22','#e74c3c','#9b59b6','#f1c40f','#1abc9c','#34495e','#7f8c8d','#d35400'] 
+                backgroundColor: ['#e74c3c','#e67e22','#f1c40f','#9b59b6','#3498db','#27ae60','#1abc9c','#34495e','#7f8c8d','#d35400'] 
             }]
         },
         options: { 
             responsive: true, 
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: { boxWidth: 12, font: { size: 11 } }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            // Kunin ang total ng lahat ng data points
-                            const dataset = context.dataset.data;
-                            const total = dataset.reduce((acc, current) => acc + current, 0);
-                            const value = context.raw;
-                            
-                            // Calculate Percentage
-                            const percentage = ((value / total) * 100).toFixed(1);
-                            
-                            return ` ${context.label}: ₱${value.toLocaleString()} (${percentage}%)`;
-                        }
-                    }
-                }
+                legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
             }
         }
     });
@@ -210,30 +237,176 @@ function openModalForAdd(date) {
 async function saveExpense(date) {
     const amount = parseFloat(document.getElementById('modal-amount').value);
     const cat = document.getElementById('modal-category').value;
+    const payMode = document.getElementById('modal-payment').value;
+    
     if(!amount) return alert("Please enter amount.");
-    if(selectedEditId) await db.collection("expenses").doc(selectedEditId).update({ amount, category: cat });
-    else await db.collection("expenses").add({ uid: currentUid, amount, category: cat, date, time: new Date().toLocaleTimeString('en-GB'), timestamp: Date.now() });
+
+    const payload = {
+        uid: currentUid,
+        amount: amount,
+        category: cat,
+        paymentMode: payMode || "Cash", 
+        type: "outflow",
+        date: date || document.getElementById('modal-date').innerText,
+        time: new Date().toLocaleTimeString('en-GB'),
+        timestamp: Date.now()
+    };
+
+    if(selectedEditId) await db.collection("expenses").doc(selectedEditId).update(payload);
+    else await db.collection("expenses").add(payload);
     closeModal();
+}
+
+// Helper para hindi paulit-ulit ang options ng Expenses
+function resetCategoryToExpenses() {
+    const catSelect = document.getElementById('modal-category');
+    if (!catSelect) return;
+    catSelect.innerHTML = `
+        <option value="Food">Food</option><option value="Transportation">Transportation</option>
+        <option value="Grocery">Grocery</option><option value="Shopping">Shopping</option>
+        <option value="Load">Load</option><option value="Laundry">Laundry</option>
+        <option value="Rent">Rent</option><option value="Bills">Bills</option>
+        <option value="Medicine">Medicine</option><option value="Others">Others</option>`;
+}
+
+function openInflowModal() {
+    let targetDate = new Date().toISOString().split('T')[0]; // Default: Today
+
+    if (globalCalendar) {
+        // Imbes na getDate(), kukunin natin ang current Start Date ng view
+        const view = globalCalendar.view;
+        const viewDate = globalCalendar.getDate();
+        
+        // Gagawin nating safe: Siguraduhin na Year at Month lang ang kukunin 
+        // tapos i-se-set natin sa first day ng buwan para hindi mag-December 31
+        const year = viewDate.getFullYear();
+        const month = String(viewDate.getMonth() + 1).padStart(2, '0');
+        targetDate = `${year}-${month}-01`; 
+    }
+    
+    const modalEl = document.getElementById('expenseModal');
+    modalEl.style.display = 'block';
+    
+    document.getElementById('modal-title').innerText = "Add Inflow (Income)";
+    document.getElementById('modal-date').innerText = targetDate;
+    document.getElementById('modal-amount').value = "";
+    
+    // Set Inflow categories
+    document.getElementById('modal-category').innerHTML = `
+        <option value="Salary">Salary</option>
+        <option value="Allowance">Allowance</option>
+        <option value="Business">Business</option>
+        <option value="Others">Others</option>`;
+    
+    document.getElementById('modal-action-buttons').innerHTML = 
+        `<button onclick="saveInflow()" class="btn-save" style="background:#27ae60">Save Inflow</button>`;
+}
+
+async function saveInflow() {
+    const amountVal = document.getElementById('modal-amount').value;
+    const amount = parseFloat(amountVal);
+    const cat = document.getElementById('modal-category').value;
+    const payMode = document.getElementById('modal-payment').value;
+    const date = document.getElementById('modal-date').innerText;
+
+    if (!amount || isNaN(amount)) {
+        return alert("Please enter a valid amount.");
+    }
+
+    const payload = {
+        uid: currentUid,
+        amount: amount,
+        category: cat,
+        paymentMode: payMode || "Cash",
+        type: "inflow",
+        date: date,
+        time: new Date().toLocaleTimeString('en-GB'),
+        timestamp: Date.now()
+    };
+
+    try {
+        if (selectedEditId) {
+            await db.collection("expenses").doc(selectedEditId).update(payload);
+        } else {
+            await db.collection("expenses").add(payload);
+        }
+        
+        // Importante: I-reset ang categories bago i-close
+        resetCategoryToExpenses();
+        closeModal();
+        alert("Inflow saved successfully!"); // Temporary alert para ma-confirm mo kung pumasok
+    } catch (e) {
+        console.error("Firebase Error:", e);
+        alert("Error saving: " + e.message);
+    }
 }
 
 async function loadHistory(date) {
     const hList = document.getElementById('modal-day-expenses');
     hList.innerHTML = "Loading...";
-    const snap = await db.collection("expenses").where("uid","==",currentUid).where("date","==",date).get();
+    
+    const snap = await db.collection("expenses")
+        .where("uid", "==", currentUid)
+        .where("date", "==", date)
+        .get();
+        
     hList.innerHTML = snap.empty ? "No records." : "";
+    
     let docs = [];
-    snap.forEach(doc => docs.push({id: doc.id, ...doc.data()}));
-    docs.sort((a,b) => b.timestamp - a.timestamp).forEach(d => {
+    snap.forEach(doc => docs.push({ id: doc.id, ...doc.data() }));
+
+    docs.sort((a, b) => b.timestamp - a.timestamp).forEach(d => {
         const li = document.createElement('li');
-        li.style.padding = "10px"; li.style.borderBottom = "1px solid #eee";
-        li.innerHTML = `<small>${d.time}</small><br><b>${d.category}</b>: ₱${d.amount.toLocaleString()}`;
+        li.style.padding = "10px"; 
+        li.style.borderBottom = "1px solid #eee";
+        li.style.cursor = "pointer";
+
+        // Lagyan natin ng kulay para madaling makita kung Inflow o Outflow
+        const isInf = d.type === "inflow";
+        const color = isInf ? "#27ae60" : "#e74c3c";
+        const typeLabel = isInf ? "[INFLOW]" : "[EXPENSE]";
+
+        li.innerHTML = `
+            <small>${d.time} | ${d.paymentMode || 'Cash'}</small><br>
+            <b style="color:${color}">${typeLabel} ${d.category}</b>: ₱${d.amount.toLocaleString()}
+        `;
+
+        // ETO ANG MAGIC PARA SA EDITING:
         li.onclick = () => {
-            selectedEditId = d.id;
-            document.getElementById('modal-title').innerText = "Edit Expense";
+            selectedEditId = d.id; // I-save yung ID para alam ng Firebase kung anong i-u-update
+            
+            if (isInf) {
+                // 1. Palitan ang Title at Dropdown Categories para sa Inflow
+                document.getElementById('modal-title').innerText = "Edit Inflow";
+                document.getElementById('modal-category').innerHTML = `
+                    <option value="Salary">Salary</option>
+                    <option value="Allowance">Allowance</option>
+                    <option value="Business">Business</option>
+                    <option value="Others">Others</option>`;
+                
+                // 2. I-set ang buttons para tumawag sa saveInflow()
+                document.getElementById('modal-action-buttons').innerHTML = `
+                    <button onclick="saveInflow()" class="btn-save" style="background:#27ae60">Update Inflow</button>
+                    <button onclick="deleteExp('${d.id}')" style="background:#e74c3c; color:white; border:none; padding:12px; margin-top:5px; width:100%; border-radius:8px; cursor:pointer;">Delete</button>
+                `;
+            } else {
+                // Default: Edit Expense logic
+                document.getElementById('modal-title').innerText = "Edit Expense";
+                resetCategoryToExpenses(); // Ibalik sa Food, Transpo, etc.
+                
+                document.getElementById('modal-action-buttons').innerHTML = `
+                    <button onclick="saveExpense()" class="btn-save">Update Expense</button>
+                    <button onclick="deleteExp('${d.id}')" style="background:#e74c3c; color:white; border:none; padding:12px; margin-top:5px; width:100%; border-radius:8px; cursor:pointer;">Delete</button>
+                `;
+            }
+
+            // 3. I-fill up ang fields ng data mula sa Firebase
             document.getElementById('modal-amount').value = d.amount;
             document.getElementById('modal-category').value = d.category;
-            document.getElementById('modal-action-buttons').innerHTML = `<button onclick="saveExpense()" class="btn-save">Update</button><button onclick="deleteExp('${d.id}')" style="background:var(--danger); color:white; border:none; padding:12px; margin-top:5px; width:100%; border-radius:8px; cursor:pointer;">Delete</button>`;
+            document.getElementById('modal-payment').value = d.paymentMode || "Cash";
+            document.getElementById('modal-date').innerText = d.date;
         };
+
         hList.appendChild(li);
     });
 }
@@ -284,17 +457,19 @@ function logout() { auth.signOut(); }
 function updateTrendChart() {
     const ctx = document.getElementById('trendChart').getContext('2d');
     
-    // Kunin ang active year mula sa calendar view
     if (!globalCalendar) return;
     const activeYear = globalCalendar.getDate().getFullYear();
     
     // I-reset ang array sa 12 months na puro 0
     let monthlyData = new Array(12).fill(0);
 
-    // Filter: Isasama lang ang expenses kung ang taon nito ay kapareho ng activeYear sa calendar
+    // FILTER: Isasama lang ang data kung same year AT kung OUTFLOW lang
     allExpenses.forEach(exp => {
         const d = new Date(exp.date);
-        if (d.getFullYear() === activeYear) {
+        
+        // CHECK: Dapat same year AND (type ay outflow O walang type)
+        // Ang !exp.type ay para sa mga lumang data mo na default na gastos
+        if (d.getFullYear() === activeYear && (exp.type === "outflow" || !exp.type)) {
             monthlyData[d.getMonth()] += exp.amount;
         }
     });
@@ -308,8 +483,8 @@ function updateTrendChart() {
             datasets: [{
                 label: `Total Spending for ${activeYear}`,
                 data: monthlyData,
-                borderColor: '#3498db',
-                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                borderColor: '#e74c3c', // Ginawa nating RED para mag-match sa "Outflow" feel
+                backgroundColor: 'rgba(231, 76, 60, 0.1)',
                 borderWidth: 3,
                 tension: 0.3,
                 fill: true,

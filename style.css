@@ -23,11 +23,13 @@ header { background: var(--primary); color: white; padding: 15px 20px; display: 
 .logo { font-weight: bold; font-size: 1.2em; }
 
 /* Layout - Desktop Default */
+/* Siguraduhin na ganito ang main layout */
 .main-layout { 
     display: grid; 
-    grid-template-columns: 350px 1fr; 
+    grid-template-columns: 350px 1fr; /* Sidebar sa left, Calendar sa right */
     gap: 20px; 
-    padding: 20px; 
+    padding: 20px;
+    align-items: start; /* Eto ang secret para hindi sila magtulakan pababa */
 }
 
 /* RESPONSIVE BREAKPOINT (Tablets and Phones) */
