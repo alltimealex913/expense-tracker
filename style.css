@@ -74,3 +74,20 @@ header { background: var(--primary); color: white; padding: 15px 20px; display: 
 #main-btn, .btn-save { background: var(--accent); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; }
 #toggle-text { color:blue; cursor:pointer; margin-top:15px; font-size: 0.9em; text-align: center; display: block; }
 .auth-box { background: white; padding: 40px; border-radius: 15px; width: 320px; margin: auto; }
+
+.budget-item {
+    margin-bottom: 15px;
+    padding: 12px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
+.progress-container {
+    background: #eee;
+    height: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+}
+.progress-bar {
+    height: 100%;
+    transition: width 0.5s ease-in-out;
+}

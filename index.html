@@ -104,6 +104,18 @@
             <canvas id="trendChart"></canvas>
         </div>
     </div>
+    <div class="card threshold-card" style="margin-top: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin: 0;">Budget Threshold Monitoring</h3>
+        <button onclick="openBudgetModal()" 
+                style="background:#27ae60; color:white; border:none; padding: 10px 20px; width: auto; border-radius:8px; cursor:pointer; font-weight:bold;">
+            + Set Budget Threshold
+        </button>
+    </div>
+    <div id="budget-monitoring-list">
+        <p style="color: gray; text-align: center; font-size: 0.9em;">Loading budget status...</p>
+    </div>
+    </div>
 </main>
         </div>
     </div>
@@ -125,8 +137,9 @@
                     <option value="Laundry">Laundry</option>
                     <option value="Rent">Rent</option>
                     <option value="Bills">Bills</option>
-                    <option value="Medicine">Medicine</option>
+                    <option value="Medical Expenses">Medical Expenses</option>
                     <option value="Savings">Savings</option>
+                    <option value="Family">Family</option>
                     <option value="Others">Others</option>
                 </select>
                 <select id="modal-payment">

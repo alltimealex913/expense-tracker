@@ -174,6 +174,7 @@ function refreshSummary() {
     });
 
     updateSidebarUI(catTotals);
+    renderBudgetStatus(catTotals);
 }
 
 function updateSidebarUI(catTotals) {
@@ -266,7 +267,7 @@ function resetCategoryToExpenses() {
         <option value="Grocery">Grocery</option><option value="Shopping">Shopping</option>
         <option value="Load">Load</option><option value="Laundry">Laundry</option>
         <option value="Rent">Rent</option><option value="Bills">Bills</option>
-        <option value="Medicine">Medicine</option><option value="Savings">Savings</option><option value="Others">Others</option>`;
+        <option value="Medical Expenses">Medical Expenses</option><option value="Savings">Savings</option><option value="Family">Family</option><option value="Others">Others</option>`;
 }
 
 function openInflowModal() {
@@ -521,5 +522,126 @@ async function forgotPassword() {
         alert("Password reset link sent! Please check your inbox or spam folder.");
     } catch (e) {
         alert("Error: " + e.message);
+    }
+}
+
+// --- BUDGET THRESHOLD SYSTEM ---
+
+// 1. Modal para sa Pag-set ng Budget
+function openBudgetModal() {
+    const modalEl = document.getElementById('expenseModal');
+    modalEl.style.display = 'block';
+    
+    document.getElementById('modal-title').innerText = "Set Category Budget";
+    document.getElementById('modal-date').innerText = "Monthly Threshold Settings";
+    document.getElementById('modal-amount').value = "";
+    
+    // I-reset ang categories para Expense categories ang mamili
+    resetCategoryToExpenses();
+
+    // Palitan ang button para saveBudget() ang tawagin imbes na saveExpense()
+    document.getElementById('modal-action-buttons').innerHTML = 
+        `<button onclick="saveBudget()" class="btn-save" style="background:#27ae60; color:white; border:none; padding: 10px 20px; width: auto; border-radius:8px; cursor:pointer; font-weight:bold;">Save Budget Threshold</button>`;
+}
+
+// 2. I-save sa Firestore
+async function saveBudget() {
+    const amount = parseFloat(document.getElementById('modal-amount').value);
+    const cat = document.getElementById('modal-category').value;
+
+    if (!amount || isNaN(amount)) return alert("Please enter a valid budget amount.");
+
+    try {
+        // Gagamit tayo ng unique ID: UID + Category para 1 budget per category lang
+        const budgetId = `${currentUid}_${cat}`;
+        await db.collection("budgets").doc(budgetId).set({
+            uid: currentUid,
+            category: cat,
+            amount: amount,
+            timestamp: Date.now()
+        });
+        
+        closeModal();
+        alert(`Success! Budget for ${cat} is now ₱${amount.toLocaleString()}`);
+        refreshSummary(); // I-trigger para mag-update agad ang bars
+    } catch (e) {
+        alert("Error saving budget: " + e.message);
+    }
+}
+
+// 3. I-render ang Progress Bars sa Dashboard
+async function renderBudgetStatus(catTotals) {
+    const container = document.getElementById('budget-monitoring-list');
+    if (!container) return;
+
+    const snapshot = await db.collection("budgets").where("uid", "==", currentUid).get();
+
+    if (snapshot.empty) {
+        container.innerHTML = `<p style="color: gray; text-align: center; font-size: 0.9em;">No budgets set. Click '+ Set Budget Threshold' to start.</p>`;
+        return;
+    }
+
+    container.innerHTML = ""; 
+
+    snapshot.forEach(doc => {
+        const b = doc.data();
+        const actualSpend = catTotals[b.category] || 0;
+        let percentage = (actualSpend / b.amount) * 100;
+        const displayPercent = Math.min(percentage, 100).toFixed(0);
+        
+        let barColor = "#27ae60"; 
+        if (percentage >= 100) barColor = "#e74c3c";
+        else if (percentage >= 80) barColor = "#e67e22";
+
+        // Gagawa tayo ng element para malagyan ng onclick (Edit)
+        const itemDiv = document.createElement('div');
+        itemDiv.className = "budget-item";
+        itemDiv.style.cssText = "margin-bottom: 15px; padding: 12px; border: 1px solid #eee; border-radius: 8px; cursor: pointer; transition: 0.2s;";
+        
+        // Hover effect para alam na clickable
+        itemDiv.onmouseover = () => itemDiv.style.background = "#f9f9f9";
+        itemDiv.onmouseout = () => itemDiv.style.background = "transparent";
+
+        // Kapag clinick, magbubukas ang modal para sa Edit
+        // Hanapin ang onclick sa loob ng renderBudgetStatus function:
+itemDiv.onclick = () => {
+    openBudgetModal();
+    document.getElementById('modal-title').innerText = "Edit Budget";
+    document.getElementById('modal-category').value = b.category;
+    document.getElementById('modal-amount').value = b.amount;
+
+    // Eto yung maglalagay ng Delete button sa modal
+    document.getElementById('modal-action-buttons').innerHTML = `
+        <button onclick="saveBudget()" class="btn-save" style="background:#2c3e50">Update</button>
+        <button onclick="deleteBudget('${b.category}')" style="background:#e74c3c; color:white; border:none; padding:12px; margin-top:10px; width:100%; border-radius:8px; cursor:pointer; font-weight:bold;">Delete Threshold</button>
+    `;
+};
+
+        itemDiv.innerHTML = `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9em;">
+                <span><b>${b.category}</b> <small style="color:gray;">(₱${actualSpend.toLocaleString()} / ₱${b.amount.toLocaleString()})</small></span>
+                <span style="font-weight:bold; color:${barColor}">${displayPercent}%</span>
+            </div>
+            <div style="background: #eee; height: 10px; border-radius: 5px; overflow: hidden;">
+                <div style="width: ${displayPercent}%; background: ${barColor}; height: 100%; transition: width 0.5s;"></div>
+            </div>
+            <div style="text-align: right; font-size: 10px; color: #95a5a6; margin-top: 5px;">Click to Edit</div>
+        `;
+        container.appendChild(itemDiv);
+    });
+}
+
+async function deleteBudget(category) {
+    if (confirm(`Are you sure you want to remove the budget for ${category}?`)) {
+        try {
+            // Gagamitin natin yung unique ID na ginawa natin kanina
+            const budgetId = `${currentUid}_${category}`;
+            await db.collection("budgets").doc(budgetId).delete();
+            
+            closeModal(); // Isara ang modal
+            refreshSummary(); // I-refresh ang dashboard para mawala agad yung bar
+        } catch (e) {
+            alert("Error deleting budget: " + e.message);
+        }
     }
 }
