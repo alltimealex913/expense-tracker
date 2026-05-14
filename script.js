@@ -1,12 +1,12 @@
-  const firebaseConfig = {
-    apiKey: "AIzaSyD6Onj91Xgvn164HNANiWOEPndArwIV0uk",
-    authDomain: "expense-tracker-43dad.firebaseapp.com",
-    projectId: "expense-tracker-43dad",
-    storageBucket: "expense-tracker-43dad.firebasestorage.app",
-    messagingSenderId: "488863929251",
-    appId: "1:488863929251:web:93e8c9b9ddb9a9912b4016",
-    measurementId: "G-180R39DZN3"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyD6Onj91Xgvn164HNANiWOEPndArwIV0uk",
+  authDomain: "expense-tracker-43dad.firebaseapp.com",
+  projectId: "expense-tracker-43dad",
+  storageBucket: "expense-tracker-43dad.firebasestorage.app",
+  messagingSenderId: "488863929251",
+  appId: "1:488863929251:web:93e8c9b9ddb9a9912b4016",
+  measurementId: "G-180R39DZN3"
+};
 
 
 firebase.initializeApp(firebaseConfig);
@@ -461,17 +461,20 @@ function updateTrendChart() {
     if (!globalCalendar) return;
     const activeYear = globalCalendar.getDate().getFullYear();
     
-    // I-reset ang array sa 12 months na puro 0
-    let monthlyData = new Array(12).fill(0);
+    // Dalawang array: isa para sa gastos, isa para sa kita
+    let monthlyOutflow = new Array(12).fill(0);
+    let monthlyInflow = new Array(12).fill(0);
 
-    // FILTER: Isasama lang ang data kung same year AT kung OUTFLOW lang
     allExpenses.forEach(exp => {
         const d = new Date(exp.date);
         
-        // CHECK: Dapat same year AND (type ay outflow O walang type)
-        // Ang !exp.type ay para sa mga lumang data mo na default na gastos
-        if (d.getFullYear() === activeYear && (exp.type === "outflow" || !exp.type)) {
-            monthlyData[d.getMonth()] += exp.amount;
+        if (d.getFullYear() === activeYear) {
+            const monthIndex = d.getMonth();
+            if (exp.type === "inflow") {
+                monthlyInflow[monthIndex] += exp.amount;
+            } else if (exp.type === "outflow" || !exp.type) {
+                monthlyOutflow[monthIndex] += exp.amount;
+            }
         }
     });
 
@@ -481,21 +484,47 @@ function updateTrendChart() {
         type: 'line',
         data: {
             labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            datasets: [{
-                label: `Total Spending for ${activeYear}`,
-                data: monthlyData,
-                borderColor: '#e74c3c', // Ginawa nating RED para mag-match sa "Outflow" feel
-                backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                borderWidth: 3,
-                tension: 0.3,
-                fill: true,
-                pointBackgroundColor: '#2c3e50',
-                pointRadius: 5
-            }]
+            datasets: [
+    {
+        label: `Total Spending (Outflow)`,
+        data: monthlyOutflow,
+        borderColor: '#e74c3c',
+        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+        borderWidth: 3,
+        tension: 0.3,
+        fill: true,
+        // Eto ang magic para sa "black dot" look:
+        pointBackgroundColor: '#2c3e50', // Ang dark dot sa gitna
+        pointBorderColor: '#e74c3c',     // Ang red na bilog sa labas
+        pointBorderWidth: 2,             // Kapal ng red border
+        pointRadius: 5,                  // Laki ng buong point
+        pointHoverRadius: 7              // Laki kapag tinapatan ng mouse
+    },
+    {
+        label: `Total Earnings (Inflow)`,
+        data: monthlyInflow,
+        borderColor: '#0892f4',
+        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+        borderWidth: 3,
+        tension: 0.3,
+        fill: true,
+        // Green version naman para sa Inflow dots:
+        pointBackgroundColor: '#2c3e50', 
+        pointBorderColor: '#0892f4',     
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7
+    }
+]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: true,
@@ -583,49 +612,56 @@ async function renderBudgetStatus(catTotals) {
 
     container.innerHTML = ""; 
 
+    // Kunin natin kung pang-ilang buwan na tayo ngayon (1 for Jan, 5 for May, etc.)
+    const currentMonthIndex = new Date().getMonth() + 1;
+
     snapshot.forEach(doc => {
         const b = doc.data();
         const actualSpend = catTotals[b.category] || 0;
-        let percentage = (actualSpend / b.amount) * 100;
+        
+        // --- DITO ANG PAGBABAGO ---
+        // Kung 'year' view, i-multiply ang monthly budget sa current month index
+        let effectiveBudget = b.amount;
+        let labelSuffix = "(Monthly)";
+
+        if (currentView === 'year') {
+            effectiveBudget = b.amount * currentMonthIndex;
+            labelSuffix = `(YTD: ${currentMonthIndex} mos)`;
+        }
+        // --------------------------
+
+        let percentage = (actualSpend / effectiveBudget) * 100;
         const displayPercent = Math.min(percentage, 100).toFixed(0);
         
         let barColor = "#27ae60"; 
         if (percentage >= 100) barColor = "#e74c3c";
         else if (percentage >= 80) barColor = "#e67e22";
 
-        // Gagawa tayo ng element para malagyan ng onclick (Edit)
         const itemDiv = document.createElement('div');
         itemDiv.className = "budget-item";
         itemDiv.style.cssText = "margin-bottom: 15px; padding: 12px; border: 1px solid #eee; border-radius: 8px; cursor: pointer; transition: 0.2s;";
         
-        // Hover effect para alam na clickable
-        itemDiv.onmouseover = () => itemDiv.style.background = "#f9f9f9";
-        itemDiv.onmouseout = () => itemDiv.style.background = "transparent";
+        itemDiv.onclick = () => {
+            openBudgetModal();
+            document.getElementById('modal-title').innerText = "Edit Budget";
+            document.getElementById('modal-category').value = b.category;
+            document.getElementById('modal-amount').value = b.amount; // Monthly pa rin ang i-edit
 
-        // Kapag clinick, magbubukas ang modal para sa Edit
-        // Hanapin ang onclick sa loob ng renderBudgetStatus function:
-itemDiv.onclick = () => {
-    openBudgetModal();
-    document.getElementById('modal-title').innerText = "Edit Budget";
-    document.getElementById('modal-category').value = b.category;
-    document.getElementById('modal-amount').value = b.amount;
-
-    // Eto yung maglalagay ng Delete button sa modal
-    document.getElementById('modal-action-buttons').innerHTML = `
-        <button onclick="saveBudget()" class="btn-save" style="background:#2c3e50">Update</button>
-        <button onclick="deleteBudget('${b.category}')" style="background:#e74c3c; color:white; border:none; padding:12px; margin-top:10px; width:100%; border-radius:8px; cursor:pointer; font-weight:bold;">Delete Threshold</button>
-    `;
-};
+            document.getElementById('modal-action-buttons').innerHTML = `
+                <button onclick="saveBudget()" class="btn-save" style="background:#2c3e50">Update</button>
+                <button onclick="deleteBudget('${b.category}')" style="background:#e74c3c; color:white; border:none; padding:12px; margin-top:10px; width:100%; border-radius:8px; cursor:pointer; font-weight:bold;">Delete Threshold</button>
+            `;
+        };
 
         itemDiv.innerHTML = `
             <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9em;">
-                <span><b>${b.category}</b> <small style="color:gray;">(₱${actualSpend.toLocaleString()} / ₱${b.amount.toLocaleString()})</small></span>
+                <span><b>${b.category}</b> <small style="color:gray;">${labelSuffix} (₱${actualSpend.toLocaleString()} / ₱${effectiveBudget.toLocaleString()})</small></span>
                 <span style="font-weight:bold; color:${barColor}">${displayPercent}%</span>
             </div>
             <div style="background: #eee; height: 10px; border-radius: 5px; overflow: hidden;">
                 <div style="width: ${displayPercent}%; background: ${barColor}; height: 100%; transition: width 0.5s;"></div>
             </div>
-            <div style="text-align: right; font-size: 10px; color: #95a5a6; margin-top: 5px;">Click to Edit</div>
+            <div style="text-align: right; font-size: 10px; color: #95a5a6; margin-top: 5px;">Click to Edit Monthly Cap</div>
         `;
         container.appendChild(itemDiv);
     });
