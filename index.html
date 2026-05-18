@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-0ZSRCXJ841"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-  gtag('config', 'G-0ZSRCXJ841');
-</script>
+      gtag('config', 'G-0ZSRCXJ841');
+    </script>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -54,69 +54,107 @@
 
         <div class="main-layout">
             <aside class="sidebar">
-    <div class="card chart-card">
-        <h3>Category Share</h3>
-        <div class="chart-container">
-            <canvas id="expenseChart"></canvas>
-        </div>
-    </div>
+                <div class="card chart-card">
+                    <h3>Category Share</h3>
+                    <div class="chart-container">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card summary-card">
+                    <div class="summary-header">
+                        <h3 id="summary-title">Summary</h3>
+                        <div class="view-toggle">
+                            <button onclick="changeView('month')" id="btn-month" class="active">Month</button>
+                            <button onclick="changeView('year')" id="btn-year">Year</button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin: 15px 0;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <span>Inflow:</span> <span id="inflow-display" style="color:#27ae60; font-weight:bold;">₱0</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between;">
+                            <span>Outflow:</span> <span id="outflow-display" style="color:#e74c3c; font-weight:bold;">₱0</span>
+                        </div>
+                        <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+                        <div style="display:flex; justify-content:space-between; font-size: 1.1em;">
+                            <strong>Savings:</strong> <strong id="savings-display" style="color:#2c3e50;">₱0</strong>
+                        </div>
 
-    <div class="card summary-card">
-    <div class="summary-header">
-        <h3 id="summary-title">Summary</h3>
-        <div class="view-toggle">
-            <button onclick="changeView('month')" id="btn-month" class="active">Month</button>
-            <button onclick="changeView('year')" id="btn-year">Year</button>
-        </div>
-    </div>
-    
-    <div style="margin: 15px 0;">
-        <div style="display:flex; justify-content:space-between;">
-            <span>Inflow:</span> <span id="inflow-display" style="color:#27ae60; font-weight:bold;">₱0</span>
-        </div>
-        <div style="display:flex; justify-content:space-between;">
-            <span>Outflow:</span> <span id="outflow-display" style="color:#e74c3c; font-weight:bold;">₱0</span>
-        </div>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
-        <div style="display:flex; justify-content:space-between; font-size: 1.1em;">
-            <strong>Savings:</strong> <strong id="savings-display" style="color:#2c3e50;">₱0</strong>
-        </div>
+                        <div id="method-totals-list" style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; font-size: 0.85em;"></div>
+                    </div>
 
-        <div id="method-totals-list" style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed #ccc; font-size: 0.85em;">
-            </div>
-    </div>
+                    <button onclick="openInflowModal()" style="background:#27ae60; color:white; border:none; padding:10px; width:100%; border-radius:8px; cursor:pointer; font-weight:bold; margin-bottom:15px;">+ Add Inflow</button>
+                    
+                    <h4 style="margin-bottom: 5px;">Category</h4>
+                    <ul id="ranking-list" style="margin-bottom: 20px;"></ul>
+                </div>
 
-    <button onclick="openInflowModal()" style="background:#27ae60; color:white; border:none; padding:10px; width:100%; border-radius:8px; cursor:pointer; font-weight:bold; margin-bottom:15px;">+ Add Inflow</button>
-    
-    <h4 style="margin-bottom: 5px;">Category</h4>
-    <ul id="ranking-list"></ul>
-</div>
-</aside>
+                <div class="card bank-hub-card" style="margin-top: 20px;">
+                    <div class="hub-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h4 style="margin: 0; font-size: 1em; font-weight: bold; color: #1e293b;">Bank Accounts</h4>
+                        <button onclick="openAddBankModal()" style="background:#27ae60; color:white; border:none; padding:5px 10px; border-radius:6px; cursor:pointer; font-size: 0.8em; font-weight:bold;">+ Add Bank</button>
+                    </div>
+                    <div id="banks-display-list" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div class="bank-mini-box" style="text-align: center; color: gray; font-size: 0.85em; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 6px;">
+                            No bank accounts linked yet.
+                        </div>
+                    </div>
+                </div>
+            </aside>
 
             <main class="calendar-section">
-    <div class="card calendar-card">
-        <div id="calendar"></div>
-    </div>
-    
-    <div class="card trend-card" style="margin-top: 20px;">
-        <h3>Spending Trend</h3>
-        <div style="height: 300px;">
-            <canvas id="trendChart"></canvas>
-        </div>
-    </div>
-    <div class="card threshold-card" style="margin-top: 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h3 style="margin: 0;">Budget Threshold Monitoring</h3>
-        <button onclick="openBudgetModal()" 
-                style="background:#27ae60; color:white; border:none; padding: 10px 20px; width: auto; border-radius:8px; cursor:pointer; font-weight:bold;">
-            + Set Budget Threshold
-        </button>
-    </div>
-    <div id="budget-monitoring-list">
-        <p style="color: gray; text-align: center; font-size: 0.9em;">No budgets set. Click '+ Set Budget Threshold' to start.</p>
-    </div>
-    </div>
-</main>
+                <div class="card calendar-card">
+                    <div id="calendar"></div>
+                </div>
+                
+                <div class="card trend-card" style="margin-top: 20px;">
+                    <h3>Spending Trend</h3>
+                    <div style="height: 300px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card threshold-card" style="margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">Budget Threshold Monitoring</h3>
+                        <button onclick="updateBudgetThresholdSetting()" 
+                                style="background:#27ae60; color:white; border:none; padding: 10px 20px; width: auto; border-radius:8px; cursor:pointer; font-weight:bold;">
+                            + Set Budget Threshold
+                        </button>
+                    </div>
+                    <div id="budget-warning-box" style="display: none; margin-bottom: 15px;"></div>
+                    <div id="budget-monitoring-list">
+                        <p style="color: gray; text-align: center; font-size: 0.9em;">No budgets set. Click '+ Set Budget Threshold' to start.</p>
+                    </div>
+                </div>
+
+                <div class="card credit-hub-card" style="margin-top: 20px; width: 100%;">
+                    <div class="hub-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">Credit Card Statements</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="openCreditCardHistoryModal()" style="background:#2c3e50; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">View Full History</button>
+                            <button onclick="openAddCreditCardModal()" style="background:#27ae60; color:white; border:none; padding:10px 15px; border-radius:6px; cursor:pointer; font-weight:bold;">+ Add Card</button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive" style="overflow-x: auto; overflow-y: visible;">
+                        <table class="dashboard-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid #cbd5e1; color: #64748b; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    <th style="padding: 10px 8px;">Card Name</th>
+                                    <th style="padding: 10px 8px;">Due Date</th>
+                                    <th style="padding: 10px 8px;">Amount Due</th>
+                                    <th style="padding: 10px 8px;">Status</th>
+                                    <th style="padding: 10px 8px; text-align: center; width: 180px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="credit-cards-display-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
 
@@ -143,19 +181,102 @@
                     <option value="Others">Others</option>
                 </select>
                 <select id="modal-payment">
-                 <option value="Cash">Cash</option>
-                <option value="GCash">GCash</option>
-                 <option value="Maya">Maya</option>
-                 <option value="Debit Card">Debit Card</option>
-                     <option value="Credit Card">Credit Card</option>
-                  <option value="Bank Transfer">Bank Transfer</option>
-                  <option value="Others">Others</option>
+                    <option value="Cash">Cash</option>
+                    <option value="GCash">GCash</option>
+                    <option value="Maya">Maya</option>
+                    <option value="Debit Card">Debit Card</option>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Others">Others</option>
                 </select>
             </div>
             <div id="modal-action-buttons"></div>
             <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
             <h4 style="text-align:left;">History</h4>
             <ul id="modal-day-expenses"></ul>
+        </div>
+    </div>
+
+    <div id="bankModal" class="modal" style="display: none; position: fixed; z-index: 9998; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+        <div class="modal-content card" style="background-color: #fff; margin: 15% auto; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative;">
+            <span onclick="closeBankModal()" style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 1.5em; color: #aaa; font-weight: bold;">&times;</span>
+            <h3 style="margin-top: 0; margin-bottom: 20px; color: #1e293b;">Link Bank Account</h3>
+            <div class="input-group" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <input type="text" id="bank-name" placeholder="Bank Name (e.g., BDO, BPI, Landbank)" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1em;">
+                <input type="number" id="bank-balance" placeholder="Initial Balance (₱)" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1em;">
+            </div>
+            <button onclick="saveBank()">Save Bank Account</button>
+        </div>
+    </div>
+
+    <div id="bankHistoryModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center;">
+        <div style="background-color: #fff; margin: 10% auto; padding: 25px; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: 0 4px 25px rgba(0,0,0,0.3); position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 15px;">
+                <h3 id="history-modal-title" style="margin: 0; color: #1e293b; font-size: 1.25em; font-weight: bold;">Bank Ledger History</h3>
+                <span onclick="closeHistoryModal()" style="cursor: pointer; font-size: 1.7em; color: #94a3b8; font-weight: bold; line-height: 1;">&times;</span>
+            </div>
+            <div style="max-height: 280px; overflow-y: auto; margin-bottom: 15px;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95em;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #cbd5e1; color: #64748b; font-weight: bold;">
+                            <th style="padding: 10px 8px;">Date</th>
+                            <th style="padding: 10px 8px; text-align: right;">Balance Record</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-modal-table-body"></tbody>
+                </table>
+            </div>
+            <div style="text-align: right; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                <button onclick="closeHistoryModal()" style="background: #64748b; color: white; border: none; padding: 10px 22px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9em;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="creditCardModal" class="modal" style="display: none; position: fixed; z-index: 9998; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+        <div class="modal-content card" style="background-color: #fff; margin: 15% auto; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative;">
+            <span onclick="closeCreditCardModal()" style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 1.5em; color: #aaa; font-weight: bold;">&times;</span>
+            <h3 style="margin-top: 0; margin-bottom: 20px; color: #1e293b;">Add Credit Card Statement</h3>
+            <div class="input-group" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <input type="text" id="cc-name" placeholder="Card Name (e.g., Security Bank Visa, Citi)" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1em;">
+                <input type="date" id="cc-due-date" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1em;">
+                <input type="number" id="cc-amount" placeholder="Statement Amount Due (₱)" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1em;">
+                
+                <select id="cc-status" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1em; background-color: white; cursor: pointer;">
+                    <option value="pending">PENDING</option>
+                    <option value="paid">PAID</option>
+                </select>
+            </div>
+            <button onclick="saveCreditCard()" style="background:#27ae60; color:white; border:none; padding:12px; width:100%; border-radius:8px; cursor:pointer; font-weight:bold;">Save Statement</button>
+        </div>
+    </div>
+
+    <div id="ccHistoryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; padding: 15px;">
+        <div style="background: white; width: 100%; max-width: 650px; border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); display: flex; flex-direction: column; max-height: 85vh;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #1e293b; display: flex; align-items: center; gap: 8px;">💳 Complete Credit Card Statements</h3>
+                <span onclick="closeCcHistoryModal()" style="cursor: pointer; font-size: 1.5em; font-weight: bold; color: #94a3b8;">&times;</span>
+            </div>
+
+            <div style="overflow-y: auto; flex: 1; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9em;">
+                    <thead style="background: #f8fafc; position: sticky; top: 0; border-bottom: 2px solid #e2e8f0; z-index: 10;">
+                        <tr>
+                            <th style="padding: 12px 10px; color: #64748b;">Card Name</th>
+                            <th style="padding: 12px 10px; color: #64748b;">Due Date</th>
+                            <th style="padding: 12px 10px; color: #64748b;">Amount</th>
+                            <th style="padding: 12px 10px; color: #64748b;">Status</th>
+                            <th style="padding: 12px 10px; text-align: center; color: #64748b;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cc-history-table-body">
+                        </tbody>
+                </table>
+            </div>
+
+            <div style="text-align: right; margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                <button onclick="closeCcHistoryModal()" style="padding: 10px 20px; background: #64748b; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.9em;">Close History</button>
+            </div>
         </div>
     </div>
 
