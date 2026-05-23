@@ -25,6 +25,7 @@ let isLoginView = true;
 let selectedEditId = null;
 let currentView = 'month';
 let allExpenses = [];
+let localBudgets = [];
 
 // ==========================================================================
 // 2. SESSION MONITOR (AUTH LIFECYCLE)
