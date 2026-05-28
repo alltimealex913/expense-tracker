@@ -1,3 +1,11 @@
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then((reg) => console.log('Service Worker successfully locked and registered!', reg.scope))
+      .catch((err) => console.log('Service Worker registration failed: ', err));
+  });
+}
+
 // ==========================================================================
 // 1. FIREBASE CONFIGURATION & INITIALIZATION
 // ==========================================================================
